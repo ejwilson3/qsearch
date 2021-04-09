@@ -115,6 +115,23 @@ class SearchCompiler(Compiler):
             best_value = options.eval_func(U, result[0])
             best_pair = (root, result[1])
             logger.logprint("New best! {} at weight 0".format(best_value))
+
+# Edits!
+            qasm_itr = 0
+            out_dict = {}
+            if best_value < 0.1:
+                out_dict['structure'] = best_pair[0]
+                out_dict['parameters'] = best_pair[1]
+                out = options.assembler.assemble(out_dict, options)
+                if options.write_location is not None:
+                    with open(options.write_location + str(qasm_itr) + ".qasm", "w") as wfile:
+                        wfile.write(out)
+                else:
+                    logger.logprint(out)
+            else:
+                qasm_itr = -1
+# /Edits
+
             if weight_limit == 0:
                 return best_pair
 
@@ -150,6 +167,22 @@ class SearchCompiler(Compiler):
                 for step, result, current_weight, weight in parallel.solve_circuits_parallel(new_steps):
                     current_value = options.eval_func(U, result[0])
                     new_weight = current_weight + weight
+
+# EDITS
+                    logger.logprint("check score: {} at weight: {}".format(current_value, new_weight))
+                    if current_value < 0.1:
+                        out_dict['structure'] = step
+                        out_dict['parameters'] = result[1]
+                        out = options.assembler.assemble(out_dict, options)
+                        if options.write_location is not None:
+                            qasm_itr += 1
+                            with open(options.write_location + str(qasm_itr) + ".qasm", "w") as wfile:
+                                wfile.write(out)
+                        else:
+                            logger.logprint(out)
+# /EDITS
+
+
                     if (current_value < best_value and (best_value >= options.threshold or new_weight <= best_weight)) or (current_value < options.threshold and new_weight < best_weight):
                         best_value = current_value
                         best_pair = (step, result[1])
